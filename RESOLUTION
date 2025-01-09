@@ -1,0 +1,49 @@
+# Use the device ID that corresponds to your USB camera
+cap = cv2.VideoCapture(2)
+
+if not cap.isOpened():
+    print("Error: Could not open USB camera.")
+    exit()
+
+print("USB camera successfully opened.")
+
+# Set resolution to maximum (4056x3040)
+width = 4056
+height = 3040
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+print(f"Resolution set to {width}x{height}.")
+
+# Create a directory to save images if it doesn't exist
+os.makedirs('captured_images', exist_ok=True)
+
+while True:
+    print("Capturing frame...")
+    ret, frame = cap.read()
+    print(f"Frame capture status: {ret}")
+
+    if ret:
+        # Display the color image
+        cv2.imshow('Captured Image', frame)
+        print("Frame displayed.")
+
+        # Save the captured color image
+        filename = os.path.join('captured_images', f"captured_image_{int(time.time())}.jpg")
+        cv2.imwrite(filename, frame)
+        print(f"Image saved as {filename}")
+
+        # Wait for 1 second before capturing the next image
+        time.sleep(1)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            print("Exiting...")
+            break
+    else:
+        print("Failed to capture image.")
+        break
+
+# Release the capture object and close windows
+cap.release()
+cv2.destroyAllWindows()
+print("USB camera released and windows closed.")
+
