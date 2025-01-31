@@ -1,0 +1,77 @@
+from pymavlink import mavutil
+import time
+
+# Connect to SITL directly
+print("Connecting to SITL...")
+sitl = mavutil.mavlink_connection('tcp:127.0.0.1:5760')
+
+# Attempt to connect multiple times
+for attempt in range(5):
+    try:
+        print(f"Attempt {attempt + 1}: Waiting for heartbeat from SITL...")
+        sitl.wait_heartbeat(timeout=30)  # Set a timeout for the heartbeat
+        print("Heartbeat received from system (system %u component %u)" % (sitl.target_system, sitl.target_component))
+        break
+    except mavutil.mavtimeout:
+        print("No heartbeat received, retrying...")
+else:
+    print("Failed to connect to SITL. Please check your setup.")
+    exit(1)
+
+# Function to arm the drone
+def arm_drone():
+    print("Arming drone...")
+    sitl.mav.command_long_send(
+        sitl.target_system, sitl.target_component,
+        mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+        0, 1, 0, 0, 0, 0, 0, 0
+    )
+    print("Drone armed")
+
+# Function to disarm the drone
+def disarm_drone():
+    print("Disarming drone...")
+    sitl.mav.command_long_send(
+        sitl.target_system, sitl.target_component,
+        mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+        0, 0, 0, 0, 0, 0, 0, 0
+    )
+    print("Drone disarmed")
+
+# Function to airdrop payload
+def airdrop():
+    print("Performing airdrop...")
+    sitl.mav.command_long_send(
+        sitl.target_system, sitl.target_component,
+        mavutil.mavlink.MAV_CMD_DO_SET_SERVO,
+        0,
+        9,  # Servo number for payload release
+        1900,  # PWM value to release payload
+        0, 0, 0, 0, 0
+    )
+    print("Payload released")
+    time.sleep(1)
+    sitl.mav.command_long_send(
+        sitl.target_system, sitl.target_component,
+        mavutil.mavlink.MAV_CMD_DO_SET_SERVO,
+        0,
+        9,  # Servo number for payload release
+        1100,  # PWM value to close servo
+        0, 0, 0, 0, 0
+    )
+    print("Servo reset")
+
+# Arm the drone
+arm_drone()
+
+# Wait a bit
+time.sleep(5)
+
+# Perform the airdrop
+airdrop()
+
+# Wait a bit
+time.sleep(5)
+
+# Disarm the drone
+disarm_drone()
